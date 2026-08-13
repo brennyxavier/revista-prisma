@@ -156,59 +156,76 @@
       if (e.key === 'ArrowLeft')  { prev(); restart(); }
     });
 
-    /* --- gestos táctiles con arrastre visual --- */
-    let startX = 0, startY = 0, currentX = 0, dragging = false, locked = false;
+    /* --- gestos táctiles con arrastre visual (móvil) --- */
+    let startX = 0, startY = 0, currentX = 0;
+    let dragging = false, directionLocked = false, isHorizontal = false;
     const viewport = slider.querySelector('.slider__viewport');
-    const trackWidth = () => viewport.offsetWidth;
+    const getTrackW = () => viewport.offsetWidth;
 
-    track.addEventListener('touchstart', (e) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
+    track.addEventListener('touchstart', function (e) {
+      /* Registrar posición inicial */
+      startX   = e.touches[0].clientX;
+      startY   = e.touches[0].clientY;
       currentX = startX;
       dragging = true;
-      locked = false;
+      directionLocked = false;
+      isHorizontal    = false;
+
+      /* Quitar la transición CSS para que el arrastre sea inmediato */
       track.style.transition = 'none';
       stop();
-    }, { passive: true });
+    }, { passive: true });  /* passive OK aquí: no llamamos preventDefault en start */
 
-    track.addEventListener('touchmove', (e) => {
+    track.addEventListener('touchmove', function (e) {
       if (!dragging) return;
+
       currentX = e.touches[0].clientX;
-      const dx = currentX - startX;
-      const dy = e.touches[0].clientY - startY;
+      var dx = currentX - startX;
+      var dy = e.touches[0].clientY - startY;
 
-      /* Decide si el gesto es horizontal o vertical (una sola vez) */
-      if (!locked && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-        locked = true;
-        if (Math.abs(dy) > Math.abs(dx)) { dragging = false; return; }
+      /* Decidir dirección una sola vez tras 6px de movimiento */
+      if (!directionLocked && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+        directionLocked = true;
+        isHorizontal = Math.abs(dx) >= Math.abs(dy);
+        if (!isHorizontal) {
+          /* Gesto vertical → soltar el control y dejar que la página haga scroll */
+          dragging = false;
+          track.style.transition = '';
+          return;
+        }
       }
-      if (!locked) return;
+      if (!directionLocked) return;
 
-      /* Limita el arrastre en los bordes */
-      const maxDx = trackWidth() * 0.35;
-      const clampedDx = Math.max(-maxDx, Math.min(maxDx, dx));
-      const base = -index * 100;
-      const pct = (clampedDx / trackWidth()) * 100;
-      track.style.transform = 'translateX(' + (base + pct) + '%)';
+      /* --- Gesto horizontal confirmado: mover el track --- */
+      e.preventDefault();   /* evita scroll vertical mientras arrastramos */
 
-      e.preventDefault();
-    }, { passive: false });
+      /* Resistencia elástica en los bordes */
+      var maxDrag = getTrackW() * 0.4;
+      var clamped = Math.max(-maxDrag, Math.min(maxDrag, dx));
+      var basePct = -index * 100;
+      var dragPct = (clamped / getTrackW()) * 100;
+      track.style.transform = 'translateX(' + (basePct + dragPct) + '%)';
+    }, { passive: false });  /* passive: false para poder llamar preventDefault */
 
-    track.addEventListener('touchend', (e) => {
+    track.addEventListener('touchend', function (e) {
       if (!dragging) { track.style.transition = ''; return; }
       dragging = false;
+
+      /* Restaurar la transición CSS suave */
       track.style.transition = '';
-      const dx = currentX - startX;
-      const threshold = trackWidth() * 0.18;
-      if (Math.abs(dx) > threshold) {
+
+      var dx = currentX - startX;
+      var threshold = getTrackW() * 0.15;  /* 15% del ancho = cambio de slide */
+
+      if (isHorizontal && Math.abs(dx) > threshold) {
         dx < 0 ? next() : prev();
       } else {
-        goTo(index);
+        goTo(index);  /* snap de vuelta al slide actual */
       }
       restart();
     });
 
-    track.addEventListener('touchcancel', () => {
+    track.addEventListener('touchcancel', function () {
       dragging = false;
       track.style.transition = '';
       goTo(index);
