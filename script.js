@@ -156,24 +156,62 @@
       if (e.key === 'ArrowLeft')  { prev(); restart(); }
     });
 
-    /* --- gestos táctiles --- */
-    let startX = 0, startY = 0, dragging = false;
+    /* --- gestos táctiles con arrastre visual --- */
+    let startX = 0, startY = 0, currentX = 0, dragging = false, locked = false;
+    const viewport = slider.querySelector('.slider__viewport');
+    const trackWidth = () => viewport.offsetWidth;
 
     track.addEventListener('touchstart', (e) => {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
+      currentX = startX;
       dragging = true;
+      locked = false;
+      track.style.transition = 'none';
       stop();
     }, { passive: true });
 
-    track.addEventListener('touchend', (e) => {
+    track.addEventListener('touchmove', (e) => {
       if (!dragging) return;
-      dragging = false;
-      const dx = e.changedTouches[0].clientX - startX;
-      const dy = e.changedTouches[0].clientY - startY;
-      if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)) {
-        dx < 0 ? next() : prev();
+      currentX = e.touches[0].clientX;
+      const dx = currentX - startX;
+      const dy = e.touches[0].clientY - startY;
+
+      /* Decide si el gesto es horizontal o vertical (una sola vez) */
+      if (!locked && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+        locked = true;
+        if (Math.abs(dy) > Math.abs(dx)) { dragging = false; return; }
       }
+      if (!locked) return;
+
+      /* Limita el arrastre en los bordes */
+      const maxDx = trackWidth() * 0.35;
+      const clampedDx = Math.max(-maxDx, Math.min(maxDx, dx));
+      const base = -index * 100;
+      const pct = (clampedDx / trackWidth()) * 100;
+      track.style.transform = 'translateX(' + (base + pct) + '%)';
+
+      e.preventDefault();
+    }, { passive: false });
+
+    track.addEventListener('touchend', (e) => {
+      if (!dragging) { track.style.transition = ''; return; }
+      dragging = false;
+      track.style.transition = '';
+      const dx = currentX - startX;
+      const threshold = trackWidth() * 0.18;
+      if (Math.abs(dx) > threshold) {
+        dx < 0 ? next() : prev();
+      } else {
+        goTo(index);
+      }
+      restart();
+    });
+
+    track.addEventListener('touchcancel', () => {
+      dragging = false;
+      track.style.transition = '';
+      goTo(index);
       restart();
     });
 

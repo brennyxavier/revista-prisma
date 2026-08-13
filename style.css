@@ -136,19 +136,9 @@ ul,ol{margin:0;padding:0;list-style:none;}
   gap:1rem;min-height:74px;
 }
 
-.brand{display:flex;align-items:center;gap:.7rem;text-decoration:none;}
+.brand{display:flex;align-items:center;text-decoration:none;flex:none;}
 .brand__logo{
-  width:46px;height:46px;object-fit:cover;border-radius:9px;
-  background:#000;flex:none;
-}
-.brand__text{display:flex;flex-direction:column;line-height:1;}
-.brand__text strong{
-  font-family:var(--display);font-weight:900;font-size:1.32rem;
-  letter-spacing:-.03em;color:var(--azul-700);
-}
-.brand__text em{
-  font-style:normal;font-size:.66rem;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--naranja-osc);font-weight:600;margin-top:3px;
+  height:48px;width:auto;object-fit:contain;flex:none;
 }
 
 .nav__menu{display:flex;align-items:center;gap:.2rem;}
@@ -483,6 +473,9 @@ ul,ol{margin:0;padding:0;list-style:none;}
 @media (min-width:900px){.tool--wide{grid-column:span 1;}}
 .tool__media{background:#fff;padding:1.4rem;display:grid;place-items:center;}
 .tool__media img{max-height:130px;width:auto;object-fit:contain;}
+.tool__media--banner{padding:0;overflow:hidden;}
+.tool__media--banner img{max-height:none;width:100%;height:clamp(180px,22vw,280px);object-fit:cover;transition:transform .5s var(--ease);}
+.tool:hover .tool__media--banner img{transform:scale(1.04);}
 .tool__body{padding:1.7rem;}
 .tool__tag{
   font-family:var(--display);font-size:.63rem;font-weight:700;letter-spacing:.2em;
@@ -637,6 +630,10 @@ ul,ol{margin:0;padding:0;list-style:none;}
   background:var(--espectro);-webkit-background-clip:text;background-clip:text;color:transparent;
 }
 .footer__meta{font-size:.82rem;color:#8a9cc2;margin:0;}
+.credits{
+  font-size:.78rem;color:#6e82ad;margin:.8rem 0 0;letter-spacing:.04em;
+}
+.credits strong{color:#c9d5ec;font-weight:600;}
 
 /* ---------- 18. Botón volver arriba ---------- */
 .to-top{
